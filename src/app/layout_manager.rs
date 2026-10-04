@@ -939,6 +939,7 @@ pub enum BottomWidgetType {
     ProcSort,
     Temp,
     TempGraph,
+    Power,
     Disk,
     DiskIoGraph,
     BasicCpu,
@@ -956,7 +957,7 @@ impl BottomWidgetType {
 
     pub fn is_widget_graph(&self) -> bool {
         use BottomWidgetType::*;
-        matches!(self, Cpu | Net | Mem | TempGraph | DiskIoGraph)
+        matches!(self, Cpu | Net | Mem | TempGraph | DiskIoGraph | Power)
     }
 
     pub fn get_pretty_name(&self) -> &str {
@@ -970,6 +971,7 @@ impl BottomWidgetType {
             Disk => "Disks",
             Battery => "Battery",
             TempGraph => "Temperature",
+            Power => "PMIC power",
             _ => "",
         }
     }
@@ -987,6 +989,7 @@ impl std::str::FromStr for BottomWidgetType {
             "proc" | "process" | "processes" => Ok(BottomWidgetType::Proc),
             "temp" | "temperature" => Ok(BottomWidgetType::Temp),
             "temp_graph" | "temperature_graph" => Ok(BottomWidgetType::TempGraph),
+            "power" => Ok(BottomWidgetType::Power),
             "disk" => Ok(BottomWidgetType::Disk),
             "disk_io_graph" => Ok(BottomWidgetType::DiskIoGraph),
             "empty" => Ok(BottomWidgetType::Empty),
@@ -1015,6 +1018,8 @@ Supported widget names:
 |              disk              |
 +--------------------------------+
 |          disk_io_graph         |
++--------------------------------+
+|              power             |
 +--------------------------------+
 |          batt, battery         |
 +--------------------------------+
@@ -1046,6 +1051,8 @@ Supported widget names:
 +--------------------------------+
 |          disk_io_graph         |
 +--------------------------------+
+|              power             |
++--------------------------------+
 |              empty             |
 +--------------------------------+
                 ",
@@ -1058,6 +1065,7 @@ Supported widget names:
 
 #[derive(Clone, Default, Debug, Copy)]
 pub struct UsedWidgets {
+    pub use_power: bool,
     pub use_cpu: bool,
     pub use_mem: bool,
     pub use_cache: bool,

@@ -204,6 +204,10 @@ impl App {
 
         self.data_store.reset();
 
+        for graph in self.states.power_state.values_mut() {
+            graph.state_mut().reset_zoom();
+        }
+
         // Reset zoom.
         // TODO: Make this suck less... should just make it so that calling
         // reset fixes this all (including above too).
@@ -2015,6 +2019,11 @@ impl App {
             {
                 Some(widget_state.graph.state_mut())
             }
+            BottomWidgetType::Power => self
+                .states
+                .power_state
+                .get_mut(&self.current_widget.widget_id)
+                .map(|graph| graph.state_mut()),
             BottomWidgetType::TempGraph
                 if let Some(widget_state) = self
                     .states

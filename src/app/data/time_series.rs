@@ -35,6 +35,10 @@ pub struct TimeSeriesData {
     /// only.
     pub time: Vec<Instant>,
 
+    /// Raspberry Pi PMIC output power in watts.
+    pub power: Values,
+    pub latest_power: Option<f64>,
+
     /// Network RX data.
     pub rx: Values,
 
@@ -81,6 +85,12 @@ impl TimeSeriesData {
         filters: &DataFilters,
     ) {
         self.time.push(data.collection_time);
+        self.latest_power = data.power;
+        if let Some(watts) = data.power {
+            self.power.push(watts);
+        } else {
+            self.power.insert_break();
+        }
 
         if let Some(network) = &data.network {
             self.rx.push(network.rx as f64);
@@ -309,6 +319,7 @@ impl TimeSeriesData {
         self.time.drain(0..=end);
         self.time.shrink_to_fit();
 
+        let _ = self.power.prune_and_shrink_to_fit(end);
         let _ = self.rx.prune_and_shrink_to_fit(end);
         let _ = self.tx.prune_and_shrink_to_fit(end);
 

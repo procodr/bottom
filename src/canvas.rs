@@ -279,6 +279,12 @@ impl Painter {
                         #[cfg(feature = "battery")]
                         self.draw_battery(f, app_state, rect[0], app_state.current_widget.widget_id)
                     }
+                    Power => self.draw_power_graph(
+                        f,
+                        app_state,
+                        rect[0],
+                        app_state.current_widget.widget_id,
+                    ),
                     TempGraph => self.draw_temperature_graph(
                         f,
                         app_state,
@@ -405,6 +411,9 @@ impl Painter {
                                 #[cfg(feature = "battery")]
                                 self.draw_battery(f, app_state, vertical_chunks[3], widget_id)
                             }
+                            Power => {
+                                self.draw_power_graph(f, app_state, vertical_chunks[3], widget_id)
+                            }
                             TempGraph => self.draw_temperature_graph(
                                 f,
                                 app_state,
@@ -499,6 +508,7 @@ impl Painter {
                         #[cfg(feature = "battery")]
                         self.draw_battery(f, app_state, *draw_loc, widget.widget_id)
                     }
+                    Power => self.draw_power_graph(f, app_state, *draw_loc, widget.widget_id),
                     TempGraph => {
                         self.draw_temperature_graph(f, app_state, *draw_loc, widget.widget_id)
                     }

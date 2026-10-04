@@ -54,6 +54,39 @@ fn new_proc_search(search_id: u64) -> BottomWidget {
 }
 
 impl Row {
+    /// Remove hidden widgets and their empty containers before assigning IDs.
+    pub fn visible_rows(rows: &[Self]) -> Vec<Self> {
+        rows.iter()
+            .filter_map(|row| {
+                let child: Vec<_> = row
+                    .child
+                    .as_ref()?
+                    .iter()
+                    .filter_map(|child| match child {
+                        RowChildren::Widget(widget) => {
+                            (!widget.hidden.unwrap_or(false)).then(|| child.clone())
+                        }
+                        RowChildren::Col { ratio, child } => {
+                            let child: Vec<_> = child
+                                .iter()
+                                .filter(|widget| !widget.hidden.unwrap_or(false))
+                                .cloned()
+                                .collect();
+                            (!child.is_empty()).then_some(RowChildren::Col {
+                                ratio: *ratio,
+                                child,
+                            })
+                        }
+                    })
+                    .collect();
+                (!child.is_empty()).then_some(Self {
+                    ratio: row.ratio,
+                    child: Some(child),
+                })
+            })
+            .collect()
+    }
+
     pub fn convert_row_to_bottom_row(
         &self, iter_id: &mut u64, total_height_ratio: &mut u16, default_widget_id: &mut u64,
         default_widget_type: &Option<BottomWidgetType>, default_widget_count: &mut u64,
@@ -238,6 +271,8 @@ pub struct FinalWidget {
     #[serde(rename = "type")]
     pub widget_type: String,
     pub default: Option<bool>,
+    /// Omit this widget from the layout.
+    pub hidden: Option<bool>,
 }
 
 #[cfg(test)]
@@ -249,6 +284,60 @@ mod test {
         constants::{DEFAULT_LAYOUT, DEFAULT_WIDGET_ID},
         options::Config,
     };
+
+    #[test]
+    fn hidden_widgets_collapse_rows_and_columns() {
+        let config: Config = from_str(
+            r#"
+            [[row]]
+              [[row.child]]
+              type = "cpu"
+              hidden = true
+            [[row]]
+              [[row.child]]
+                [[row.child.child]]
+                type = "proc"
+                hidden = true
+              [[row.child]]
+                [[row.child.child]]
+                type = "disk"
+                hidden = true
+                [[row.child.child]]
+                type = "power"
+                default = true
+              [[row.child]]
+              type = "mem"
+              hidden = false
+        "#,
+        )
+        .unwrap();
+        let rows = Row::visible_rows(&config.row.unwrap());
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].child.as_ref().unwrap().len(), 2);
+        let layout = test_create_layout(&rows, 1, None, 1, false);
+        assert_eq!(layout.total_row_height_ratio, 1);
+        let columns = &layout.rows[0].children;
+        assert_eq!(columns[0].children.len(), 1);
+        let power = &columns[0].children[0].children[0];
+        assert_eq!(power.widget_type, BottomWidgetType::Power);
+        assert_eq!(power.widget_id, 1);
+        assert_eq!(power.right_neighbour, Some(2));
+        assert_eq!(columns[1].children[0].children[0].left_neighbour, Some(1));
+    }
+
+    #[test]
+    fn all_hidden_leaves_no_rows() {
+        let config: Config = from_str(
+            r#"
+            [[row]]
+              [[row.child]]
+              type = "cpu"
+              hidden = true
+        "#,
+        )
+        .unwrap();
+        assert!(Row::visible_rows(&config.row.unwrap()).is_empty());
+    }
 
     const PROC_LAYOUT: &str = r#"
     [[row]]

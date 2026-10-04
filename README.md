@@ -1,3 +1,5 @@
+> **Raspberry Pi 5 fork:** adds a PMIC power graph and hideable widgets. See [build, install, and configuration instructions](README-RPI5.md).
+
 <div align="center">
   <h1>bottom (btm)</h1>
 

@@ -12,6 +12,7 @@ use crate::{
 };
 
 pub struct AppWidgetStates {
+    pub power_state: HashMap<u64, crate::components::time_series::AutoYAxisTimeGraph>,
     pub cpu_state: CpuState,
     pub mem_state: MemState,
     pub net_state: NetState,

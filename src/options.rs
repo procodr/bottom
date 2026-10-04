@@ -380,6 +380,7 @@ pub(crate) fn init_app(args: BottomArgs, config: Config) -> Result<(App, BottomL
     let mut net_state_map: FxHashMap<u64, NetWidgetState> = FxHashMap::default();
     let mut proc_state_map: FxHashMap<u64, ProcWidgetState> = FxHashMap::default();
     let mut temp_state_map: FxHashMap<u64, TempWidgetState> = FxHashMap::default();
+    let mut power_state = FxHashMap::default();
     let mut temp_graph_state_map: FxHashMap<u64, TempGraphWidgetState> = FxHashMap::default();
     let mut disk_state_map: FxHashMap<u64, DiskTableWidget> = FxHashMap::default();
     let mut disk_io_graph_state_map: FxHashMap<u64, DiskIoGraphWidgetState> = FxHashMap::default();
@@ -681,6 +682,15 @@ pub(crate) fn init_app(args: BottomArgs, config: Config) -> Result<(App, BottomL
                                 TempWidgetState::new(&app_config_fields, &styling),
                             );
                         }
+                        Power => {
+                            power_state.insert(
+                                widget.widget_id,
+                                crate::components::time_series::AutoYAxisTimeGraph::new(
+                                    ts_config,
+                                    autohide_timer,
+                                ),
+                            );
+                        }
                         TempGraph => {
                             let upper_limit = config
                                 .temperature_graph
@@ -775,6 +785,7 @@ pub(crate) fn init_app(args: BottomArgs, config: Config) -> Result<(App, BottomL
         use_proc: used_widget_set.contains(&Proc),
         use_disk: used_widget_set.contains(&Disk),
         use_temp: used_widget_set.contains(&Temp),
+        use_power: used_widget_set.contains(&Power),
         use_temp_graph: used_widget_set.contains(&TempGraph),
         use_disk_io_graph: used_widget_set.contains(&DiskIoGraph),
         use_battery: used_widget_set.contains(&Battery),
@@ -815,6 +826,7 @@ pub(crate) fn init_app(args: BottomArgs, config: Config) -> Result<(App, BottomL
         net_state: NetState::init(net_state_map),
         proc_state: ProcState::init(proc_state_map),
         temp_state: TempState::init(temp_state_map),
+        power_state,
         temp_graph_state: TempGraphStates::init(temp_graph_state_map),
         disk_state: DiskState::init(disk_state_map),
         disk_io_graph_state: DiskIoGraphStates::init(disk_io_graph_state_map),
@@ -884,6 +896,8 @@ fn get_widget_layout(
                 &ref_row
             }
         };
+
+        let rows = Row::visible_rows(rows);
 
         let mut iter_id = 0; // A lazy way of forcing unique IDs *shrugs*
         let mut total_height_ratio = 0;
@@ -1454,6 +1468,47 @@ mod test {
             get_update_rate, parse_legend_position, try_parse_ms,
         },
     };
+
+    #[test]
+    fn power_layout_and_hidden_collection() {
+        let config = toml_edit::de::from_str(include_str!("../sample_configs/rpi5.toml")).unwrap();
+        let (app, _, _) = init_app(BottomArgs::parse_from(["btm"]), config).unwrap();
+        assert!(app.used_widgets.use_power);
+        assert!(!app.used_widgets.use_disk);
+        assert_eq!(app.states.power_state.len(), 1);
+        assert_eq!(app.current_widget.widget_type, BottomWidgetType::Proc);
+
+        let config = toml_edit::de::from_str(
+            r#"
+            [[row]]
+              [[row.child]]
+              type = "power"
+              default = true
+              hidden = true
+              [[row.child]]
+              type = "mem"
+        "#,
+        )
+        .unwrap();
+        let (app, _, _) = init_app(BottomArgs::parse_from(["btm"]), config).unwrap();
+        assert!(!app.used_widgets.use_power);
+        assert!(app.states.power_state.is_empty());
+        assert_eq!(app.current_widget.widget_type, BottomWidgetType::Mem);
+    }
+
+    #[test]
+    fn rejects_all_hidden_layout() {
+        let config = toml_edit::de::from_str(
+            r#"
+            [[row]]
+              [[row.child]]
+              type = "power"
+              hidden = true
+        "#,
+        )
+        .unwrap();
+        assert!(get_widget_layout(&BottomArgs::parse_from(["btm"]), &config).is_err());
+    }
 
     #[test]
     fn verify_try_parse_ms() {

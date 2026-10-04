@@ -1,0 +1,23 @@
+# Run with: btm -C sample_configs/rpi5.toml
+# Set hidden = true on any widget below, then restart btm.
+[[row]]
+  [[row.child]]
+  type = "cpu"
+  [[row.child]]
+  type = "power"
+
+[[row]]
+  [[row.child]]
+  type = "mem"
+  [[row.child]]
+  type = "temp"
+  [[row.child]]
+  type = "disk"
+  hidden = true
+
+[[row]]
+  [[row.child]]
+  type = "net"
+  [[row.child]]
+  type = "proc"
+  default = true

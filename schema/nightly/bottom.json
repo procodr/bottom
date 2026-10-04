@@ -454,6 +454,13 @@
             "null"
           ]
         },
+        "hidden": {
+          "description": "Omit this widget from the layout.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
         "ratio": {
           "type": [
             "integer",

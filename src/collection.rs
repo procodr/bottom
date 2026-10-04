@@ -22,6 +22,7 @@ pub mod disks;
 pub mod error;
 pub mod memory;
 pub mod network;
+mod power;
 pub mod processes;
 pub mod temperature;
 
@@ -43,6 +44,7 @@ use crate::utils::int_hash::IntHashMap;
 #[derive(Clone, Debug)]
 pub struct Data {
     pub collection_time: Instant,
+    pub power: Option<f64>,
     pub cpu: Option<cpu::CpuHarvest>,
     pub load_avg: Option<cpu::LoadAvgHarvest>,
     pub memory: Option<memory::MemData>,
@@ -66,6 +68,7 @@ impl Default for Data {
     fn default() -> Self {
         Data {
             collection_time: Instant::now(),
+            power: None,
             cpu: None,
             load_avg: None,
             memory: None,
@@ -89,6 +92,7 @@ impl Default for Data {
 
 impl Data {
     pub fn cleanup(&mut self) {
+        self.power = None;
         self.io = None;
         self.temperature_sensors = None;
         self.list_of_processes = None;
@@ -407,6 +411,9 @@ impl DataCollector {
         self.update_cpu_usage();
         self.update_memory_usage();
         self.update_temps();
+        if self.widgets_to_harvest.use_power {
+            self.data.power = power::read_power();
+        }
 
         #[cfg(feature = "battery")]
         self.update_batteries();

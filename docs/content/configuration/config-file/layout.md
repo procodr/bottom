@@ -49,6 +49,7 @@ The following `type` values are supported:
 | `"temp_graph", "temperature_graph"` | Temperature graph        |
 | `"disk"`                            | Disk table               |
 | `"disk_io_graph"`                   | Disk I/O graph           |
+| `"power"`                           | Raspberry Pi PMIC power  |
 | `"empty"`                           | An empty space           |
 | `"batt", "battery"`                 | Battery statistics       |
 
@@ -57,3 +58,49 @@ Each component of the layout accepts a `ratio` value. If this is not set, it def
 Furthermore, you can have duplicate widgets.
 
 For an example, look at the [default config](https://github.com/ClementTsang/bottom/blob/main/sample_configs/default_config.toml), which contains the default layout.
+
+## Hiding widgets
+
+Set `hidden = true` on any `[[row.child]]` or `[[row.child.child]]` widget
+entry, then restart bottom. The widget is removed from the layout and keyboard
+navigation; remaining widgets fill the space. Empty rows and columns are removed
+as well. Remove the setting or use `hidden = false` to show it again. Keep at
+least one widget visible. These settings apply to custom layouts, not basic mode.
+
+```toml
+[[row]]
+  [[row.child]]
+  type = "cpu"
+  [[row.child]]
+  type = "disk"
+  hidden = true
+```
+
+## Raspberry Pi 5 power graph
+
+Add a widget with `type = "power"` to graph PMIC rail power in watts. The graph
+supports the usual zoom, expand, and freeze controls. Collection runs only when
+a power widget is present in the visible layout.
+
+```toml
+[[row]]
+  [[row.child]]
+  type = "power"
+```
+
+Requires Linux on a Raspberry Pi 5 with `vcgencmd pmic_read_adc` working for the
+user running bottom. If it requires root, run `sudo -v` in the same terminal
+before starting bottom. The collector tries `sudo -n vcgencmd pmic_read_adc`
+when direct access fails; it never prompts for or stores your password. Renew
+the authorization with `sudo -v` if it expires. Missing or invalid readings
+display as unavailable and leave
+a gap in the graph. Power is the sum of each reported rail's voltage × current.
+This is **PMIC output power**, not total USB-C input or wall power: USB devices,
+other direct 5V loads, and conversion losses are not included. See the
+[Raspberry Pi hardware documentation](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html).
+
+A ready-to-use layout is included in `sample_configs/rpi5.toml`:
+
+```sh
+cargo run --release -- -C sample_configs/rpi5.toml
+```
