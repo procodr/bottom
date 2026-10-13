@@ -94,6 +94,7 @@ pub struct InnerData {
     prev_io: FxHashMap<(String, String), (u64, u64)>,
     pub(crate) disk_harvest: Vec<DiskWidgetData>,
     pub(crate) temp_data: Vec<TempWidgetData>,
+    pub(crate) fan_rpm: Option<u32>,
     #[cfg(feature = "battery")]
     pub(crate) battery_harvest: Vec<batteries::BatteryData>,
 
@@ -117,6 +118,7 @@ impl Default for InnerData {
             prev_io: FxHashMap::default(),
             disk_harvest: Vec::default(),
             temp_data: Vec::default(),
+            fan_rpm: None,
             #[cfg(feature = "battery")]
             battery_harvest: Vec::default(),
             #[cfg(feature = "zfs")]
@@ -169,6 +171,7 @@ impl InnerData {
             self.network_harvest = network;
         }
 
+        self.fan_rpm = data.fan_rpm;
         self.ram_harvest = data.memory;
         self.swap_harvest = data.swap;
 

@@ -2,6 +2,7 @@
 
 This fork of [ClementTsang/bottom](https://github.com/ClementTsang/bottom) adds:
 
+- Active Cooler RPM in the temperature widget header (read from Linux hwmon).
 - A `power` graph showing Raspberry Pi 5 PMIC rail power in watts.
 - `hidden = true` on any widget in a custom layout. Hidden widgets are removed
   from navigation, remaining widgets fill the space, and unused collectors stop.
@@ -61,6 +62,18 @@ install -m 644 sample_configs/rpi5.toml "$HOME/.config/bottom/bottom.toml"
 If you use `XDG_CONFIG_HOME`, put the config in `$XDG_CONFIG_HOME/bottom/`
 instead, or select it explicitly with `btm -C /path/to/bottom.toml`.
 
+## System-wide install for `sudo btm`
+
+```sh
+sudo install -m 755 target/release/btm /usr/local/bin/btm
+sudo mkdir -p /root/.config/bottom
+# Back up any existing root config before installing the included layout.
+sudo install -m 644 sample_configs/rpi5.toml /root/.config/bottom/bottom.toml
+sudo btm
+```
+
+When running as root, edit `/root/.config/bottom/bottom.toml` to change the layout.
+
 ## Run and configure
 
 ```sh
@@ -72,6 +85,10 @@ btm
 terminal as bottom. The collector first tries direct access, then
 `sudo -n vcgencmd pmic_read_adc`; it never prompts inside the UI or stores a
 password. Renew sudo authorization if power becomes unavailable.
+
+The temperature widget automatically shows `Cooler: <speed> RPM` when a
+`pwmfan` tachometer is readable. A stopped fan shows `0 RPM`; missing or invalid
+readings omit the RPM label. No extra configuration is needed.
 
 Edit `~/.config/bottom/bottom.toml` and restart bottom to apply changes:
 

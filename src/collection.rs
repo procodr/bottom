@@ -20,6 +20,7 @@ pub mod batteries;
 pub mod cpu;
 pub mod disks;
 pub mod error;
+mod fan;
 pub mod memory;
 pub mod network;
 mod power;
@@ -45,6 +46,7 @@ use crate::utils::int_hash::IntHashMap;
 pub struct Data {
     pub collection_time: Instant,
     pub power: Option<f64>,
+    pub fan_rpm: Option<u32>,
     pub cpu: Option<cpu::CpuHarvest>,
     pub load_avg: Option<cpu::LoadAvgHarvest>,
     pub memory: Option<memory::MemData>,
@@ -69,6 +71,7 @@ impl Default for Data {
         Data {
             collection_time: Instant::now(),
             power: None,
+            fan_rpm: None,
             cpu: None,
             load_avg: None,
             memory: None,
@@ -93,6 +96,7 @@ impl Default for Data {
 impl Data {
     pub fn cleanup(&mut self) {
         self.power = None;
+        self.fan_rpm = None;
         self.io = None;
         self.temperature_sensors = None;
         self.list_of_processes = None;
@@ -411,6 +415,11 @@ impl DataCollector {
         self.update_cpu_usage();
         self.update_memory_usage();
         self.update_temps();
+        self.data.fan_rpm = if self.widgets_to_harvest.use_temp {
+            fan::read_rpm()
+        } else {
+            None
+        };
         if self.widgets_to_harvest.use_power {
             self.data.power = power::read_power();
         }

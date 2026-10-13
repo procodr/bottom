@@ -19,6 +19,12 @@ impl Painter {
             .widget_states
             .get_mut(&widget_id)
         {
+            temp_widget_state.table.props.title =
+                Some(match app_state.data_store.get_data().fan_rpm {
+                    Some(rpm) => format!(" Temperatures | Cooler: {rpm} RPM ").into(),
+                    None => " Temperatures ".into(),
+                });
+
             let is_on_widget = app_state.current_widget.widget_id == widget_id;
 
             let draw_info = DrawInfo {
